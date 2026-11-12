@@ -1,0 +1,6 @@
+{
+  "name": "CrownTab Pageant Tabulation System",
+  "description": "Professional web-based pageant tabulation platform featuring real-time judge scoring, automated ranking, offline sync, role-based access, and exportable audit reports.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
