@@ -1,4 +1,8 @@
 import { Contestant, Segment, User, EventConfig, ScoreEntry, AuditLogEntry } from '../types/pageant';
+import elenaImg from '../assets/images/contestant_elena_solis_1794473278783.jpg';
+import mayaImg from '../assets/images/contestant_maya_chen_1794473278965.jpg';
+import amaraImg from '../assets/images/contestant_amara_okoro_1794473279566.jpg';
+import sofiaImg from '../assets/images/contestant_sofia_martinez_1794473279479.jpg';
 
 export const initialConfig: EventConfig = {
   eventName: 'Miss Celestial Global 2026',
@@ -96,7 +100,7 @@ export const initialContestants: Contestant[] = [
     height: "5'9\"",
     hometown: 'Atlanta, GA',
     advocacy: 'Pediatric Healthcare & Mental Wellness in Underfunded Communities',
-    photoUrl: '/src/assets/images/contestant_elena_solis_1794473278783.jpg',
+    photoUrl: elenaImg,
     status: 'finalist',
     specialAwards: ['Best in Swimwear']
   },
@@ -109,7 +113,7 @@ export const initialContestants: Contestant[] = [
     height: "5'8\"",
     hometown: 'San Francisco, CA',
     advocacy: 'Empowering Young Women in STEM & Clean Ocean Technologies',
-    photoUrl: '/src/assets/images/contestant_maya_chen_1794473278965.jpg',
+    photoUrl: mayaImg,
     status: 'finalist',
     specialAwards: ['Miss Photogenic']
   },
@@ -122,7 +126,7 @@ export const initialContestants: Contestant[] = [
     height: "5'10\"",
     hometown: 'Houston, TX',
     advocacy: 'Sustainable Agriculture & Girls Education Infrastructure',
-    photoUrl: '/src/assets/images/contestant_amara_okoro_1794473279566.jpg',
+    photoUrl: amaraImg,
     status: 'finalist',
     specialAwards: ['Best in Evening Gown']
   },
@@ -135,7 +139,7 @@ export const initialContestants: Contestant[] = [
     height: "5'9\"",
     hometown: 'Miami, FL',
     advocacy: 'Cultural Heritage Preservation & Youth Arts Mentorship',
-    photoUrl: '/src/assets/images/contestant_sofia_martinez_1794473279479.jpg',
+    photoUrl: sofiaImg,
     status: 'finalist',
     specialAwards: ['Miss Congeniality']
   },
