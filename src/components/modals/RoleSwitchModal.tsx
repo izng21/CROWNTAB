@@ -3,6 +3,8 @@ import { User, UserRole } from '../../types/pageant';
 import { Crown, UserCheck, ShieldCheck, Mic, Award, X, Check } from 'lucide-react';
 import { sounds } from '../../utils/soundEffects';
 
+import { usePageant } from '../../context/PageantContext';
+
 interface RoleSwitchModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -18,7 +20,13 @@ export const RoleSwitchModal: React.FC<RoleSwitchModalProps> = ({
   currentUser,
   onSelectUser
 }) => {
+  const { eventConfig } = usePageant();
   if (!isOpen) return null;
+
+  const activeJudgeCount = eventConfig.judgeCount || 5;
+  const filteredUsers = users.filter(
+    (u) => u.role !== 'judge' || (u.judgeNumber || 0) <= activeJudgeCount
+  );
 
   const getRoleIcon = (role: UserRole) => {
     switch (role) {
@@ -65,7 +73,7 @@ export const RoleSwitchModal: React.FC<RoleSwitchModalProps> = ({
         </div>
 
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[60vh] overflow-y-auto pr-1">
-          {users.map((user) => {
+          {filteredUsers.map((user) => {
             const isCurrent = user.id === currentUser.id;
             return (
               <button

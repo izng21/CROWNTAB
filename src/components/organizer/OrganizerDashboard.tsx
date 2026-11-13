@@ -14,9 +14,11 @@ import {
   TrendingUp,
   AlertCircle
 } from 'lucide-react';
-import { RankingSystem, CompetitionPhase } from '../../types/pageant';
+import { RankingSystem, CompetitionPhase, Contestant } from '../../types/pageant';
 import { exportTabulationCSV } from '../../utils/exportUtils';
 import { sounds } from '../../utils/soundEffects';
+import { PageantConfigModal } from '../modals/PageantConfigModal';
+import { ContestantFormModal } from '../modals/ContestantFormModal';
 
 export const OrganizerDashboard: React.FC = () => {
   const {
@@ -31,10 +33,16 @@ export const OrganizerDashboard: React.FC = () => {
     setRankingSystem,
     advanceCompetitionPhase,
     tabulationRankings,
-    setActiveView
+    setActiveView,
+    addContestant,
+    updateContestant,
+    deleteContestant
   } = usePageant();
 
   const [selectedSegmentId, setSelectedSegmentId] = useState(activeSegment.id);
+  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+  const [isCandidateModalOpen, setIsCandidateModalOpen] = useState(false);
+  const [editingCandidate, setEditingCandidate] = useState<Contestant | null>(null);
   const currentViewSegment = segments.find((s) => s.id === selectedSegmentId) || activeSegment;
 
   // Calculate judge completion status for this segment
@@ -88,10 +96,28 @@ export const OrganizerDashboard: React.FC = () => {
         <div className="flex flex-wrap items-center gap-2.5">
           <button
             type="button"
-            onClick={() => setActiveView('judge_pad')}
-            className="px-3.5 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-semibold flex items-center gap-2 border border-amber-500/30 transition-colors"
+            onClick={() => setIsConfigModalOpen(true)}
+            className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-bold flex items-center gap-2 shadow-lg shadow-amber-400/20 transition-all"
           >
-            <span>Open Judge Tablet View</span>
+            <Settings2 className="w-4 h-4" />
+            <span>Customize Pageant & Judges ({eventConfig.judgeCount || 5})</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setEditingCandidate(null);
+              setIsCandidateModalOpen(true);
+            }}
+            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-amber-300 text-xs font-semibold flex items-center gap-1.5 border border-amber-500/30 transition-colors"
+          >
+            <span>+ Enter Candidate</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveView('judge_pad')}
+            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-medium flex items-center gap-2 border border-slate-700 transition-colors"
+          >
+            <span>Open Judge Tablet</span>
           </button>
           <button
             type="button"
@@ -112,7 +138,7 @@ export const OrganizerDashboard: React.FC = () => {
           <button
             type="button"
             onClick={() => setActiveView('emcee_stage')}
-            className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-semibold flex items-center gap-2 shadow-lg shadow-amber-400/20 transition-all"
+            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-medium flex items-center gap-2 border border-slate-700 transition-colors"
           >
             Stage Teleprompter
             <ChevronRight className="w-3.5 h-3.5" />
@@ -415,6 +441,27 @@ export const OrganizerDashboard: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* Pageant Configuration Modal */}
+      <PageantConfigModal
+        isOpen={isConfigModalOpen}
+        onClose={() => setIsConfigModalOpen(false)}
+      />
+
+      {/* Contestant Entry & Editor Modal */}
+      <ContestantFormModal
+        isOpen={isCandidateModalOpen}
+        onClose={() => setIsCandidateModalOpen(false)}
+        onSave={(data) => {
+          if (editingCandidate) {
+            updateContestant(editingCandidate.id, data);
+          } else {
+            addContestant(data as Omit<Contestant, 'id'>);
+          }
+        }}
+        contestantToEdit={editingCandidate}
+        existingContestants={contestants}
+      />
     </div>
   );
 };

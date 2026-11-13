@@ -39,7 +39,15 @@ interface PageantContextType {
   activeView: 'judge_pad' | 'organizer_dashboard' | 'rankings' | 'audit_trail' | 'emcee_stage' | 'reports';
   setActiveView: (view: 'judge_pad' | 'organizer_dashboard' | 'rankings' | 'audit_trail' | 'emcee_stage' | 'reports') => void;
   
-  // Actions
+  // Customization Actions
+  updateEventConfig: (updates: Partial<EventConfig>) => void;
+  setJudgeCount: (count: number) => void;
+  updateJudge: (judgeId: string, updates: Partial<User>) => void;
+  deleteContestant: (id: string) => void;
+  updateSegment: (segmentId: string, updates: Partial<Segment>) => void;
+  allUsers: User[];
+
+  // Operational Actions
   submitJudgeScore: (entry: Omit<ScoreEntry, 'id' | 'submittedAt' | 'status'>, signature?: string) => Promise<{ success: boolean; isOffline: boolean }>;
   syncOfflineQueue: () => Promise<number>;
   toggleSegmentLock: (segmentId: string) => void;
@@ -66,14 +74,21 @@ const STORAGE_KEYS = {
   SCORES: 'crowntab_scores_v1',
   AUDIT: 'crowntab_audit_v1',
   OFFLINE: 'crowntab_offline_queue_v1',
-  CURRENT_USER: 'crowntab_current_user_v1'
+  CURRENT_USER: 'crowntab_current_user_v1',
+  USERS: 'crowntab_users_v1'
 };
 
 const PageantContext = createContext<PageantContextType | null>(null);
 
 export const PageantProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // 1. Initial State Hydration with LocalStorage Fallback
-  const [users] = useState<User[]>(initialUsers);
+  const [users, setUsers] = useState<User[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.USERS);
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return initialUsers;
+  });
   
   const [currentUser, setCurrentUser] = useState<User>(() => {
     try {
@@ -462,6 +477,50 @@ export const PageantProvider: React.FC<{ children: React.ReactNode }> = ({ child
     [currentUser.name, addAuditLog]
   );
 
+  // Pageant Event Customization
+  const updateEventConfig = useCallback(
+    (updates: Partial<EventConfig>) => {
+      setEventConfig((prev) => {
+        const next = { ...prev, ...updates };
+        broadcastEvent('CONFIG_UPDATE', next);
+        return next;
+      });
+      addAuditLog('PAGEANT_CONFIG_UPDATED', `Updated pageant configuration: ${Object.keys(updates).join(', ')}`);
+      sounds.playTap();
+    },
+    [addAuditLog]
+  );
+
+  const setJudgeCount = useCallback(
+    (count: number) => {
+      const clamped = Math.max(1, Math.min(7, count));
+      setEventConfig((prev) => {
+        const next = { ...prev, judgeCount: clamped };
+        broadcastEvent('CONFIG_UPDATE', next);
+        return next;
+      });
+      addAuditLog('JUDGES_CONFIG_UPDATED', `Active Board of Judges set to ${clamped} judge(s).`);
+      sounds.playTap();
+    },
+    [addAuditLog]
+  );
+
+  const updateJudge = useCallback(
+    (judgeId: string, updates: Partial<User>) => {
+      setUsers((prev) => {
+        const next = prev.map((u) => (u.id === judgeId ? { ...u, ...updates } : u));
+        try {
+          localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(next));
+        } catch {}
+        broadcastEvent('USERS_UPDATE', next);
+        return next;
+      });
+      addAuditLog('JUDGES_CONFIG_UPDATED', `Updated credentials for ${updates.name || judgeId}`);
+      sounds.playTap();
+    },
+    [addAuditLog]
+  );
+
   // Contestant CRUD
   const addContestant = useCallback(
     (data: Omit<Contestant, 'id'>) => {
@@ -470,7 +529,8 @@ export const PageantProvider: React.FC<{ children: React.ReactNode }> = ({ child
         id: `c_${Date.now()}`
       };
       setContestants((prev) => [...prev, newContestant]);
-      addAuditLog('PHASE_ADVANCED', `Added candidate #${newContestant.number} - ${newContestant.name} (${newContestant.representing})`);
+      addAuditLog('CONTESTANT_ADDED', `Added candidate #${newContestant.number} - ${newContestant.name} (${newContestant.representing})`);
+      sounds.playTap();
     },
     [addAuditLog]
   );
@@ -478,6 +538,31 @@ export const PageantProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const updateContestant = useCallback(
     (id: string, updates: Partial<Contestant>) => {
       setContestants((prev) => prev.map((c) => (c.id === id ? { ...c, ...updates } : c)));
+      addAuditLog('CONTESTANT_UPDATED', `Updated candidate details for ${updates.name || id}`);
+      sounds.playTap();
+    },
+    [addAuditLog]
+  );
+
+  const deleteContestant = useCallback(
+    (id: string) => {
+      const found = contestants.find((c) => c.id === id);
+      setContestants((prev) => prev.filter((c) => c.id !== id));
+      setScores((prev) => prev.filter((s) => s.contestantId !== id));
+      addAuditLog('CONTESTANT_DELETED', `Removed candidate #${found?.number} (${found?.name})`);
+      sounds.playTap();
+    },
+    [contestants, addAuditLog]
+  );
+
+  const updateSegment = useCallback(
+    (segmentId: string, updates: Partial<Segment>) => {
+      setSegments((prev) => {
+        const next = prev.map((s) => (s.id === segmentId ? { ...s, ...updates } : s));
+        broadcastEvent('SEGMENTS_UPDATE', next);
+        return next;
+      });
+      sounds.playTap();
     },
     []
   );
@@ -491,6 +576,7 @@ export const PageantProvider: React.FC<{ children: React.ReactNode }> = ({ child
     localStorage.removeItem(STORAGE_KEYS.AUDIT);
     localStorage.removeItem(STORAGE_KEYS.OFFLINE);
     localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+    localStorage.removeItem(STORAGE_KEYS.USERS);
 
     setEventConfig(initialConfig);
     setContestants(initialContestants);
@@ -498,11 +584,19 @@ export const PageantProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setScores(generateInitialScores());
     setAuditLogs(initialAuditLogs);
     setOfflineQueue([]);
+    setUsers(initialUsers);
     setCurrentUser(initialUsers[2]); // Judge 1
     sounds.playTap();
   }, []);
 
-  const judges = useMemo(() => users.filter((u) => u.role === 'judge'), [users]);
+  // Filter judges strictly according to organizer configured count (1-5 or custom)
+  const judges = useMemo(() => {
+    const targetCount = eventConfig.judgeCount || 5;
+    return users
+      .filter((u) => u.role === 'judge')
+      .slice(0, targetCount);
+  }, [users, eventConfig.judgeCount]);
+
   const activeSegment = useMemo(
     () => segments.find((s) => s.id === eventConfig.activeSegmentId) || segments[0],
     [segments, eventConfig.activeSegmentId]
@@ -640,6 +734,12 @@ export const PageantProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setSoundMuted,
         activeView,
         setActiveView,
+        updateEventConfig,
+        setJudgeCount,
+        updateJudge,
+        deleteContestant,
+        updateSegment,
+        allUsers: users,
         submitJudgeScore,
         syncOfflineQueue,
         toggleSegmentLock,

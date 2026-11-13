@@ -96,7 +96,12 @@ export interface AuditLogEntry {
     | 'PHASE_ADVANCED' 
     | 'AUDITOR_CERTIFIED' 
     | 'OFFLINE_SYNC_EXECUTED'
-    | 'REPORT_EXPORTED';
+    | 'REPORT_EXPORTED'
+    | 'PAGEANT_CONFIG_UPDATED'
+    | 'JUDGES_CONFIG_UPDATED'
+    | 'CONTESTANT_ADDED'
+    | 'CONTESTANT_UPDATED'
+    | 'CONTESTANT_DELETED';
   details: string;
   hash: string;
 }
@@ -133,4 +138,5 @@ export interface EventConfig {
   auditorSignature?: string;
   auditorCertifiedAt?: string;
   organizerSignature?: string;
+  judgeCount: number; // 1 to 5 (or up to 7)
 }

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { usePageant } from '../../context/PageantContext';
-import { Crown, User, Volume2, VolumeX, RefreshCw } from 'lucide-react';
+import { Crown, User, Volume2, VolumeX, RefreshCw, Settings } from 'lucide-react';
 import { RoleSwitchModal } from '../modals/RoleSwitchModal';
+import { PageantConfigModal } from '../modals/PageantConfigModal';
 import { sounds } from '../../utils/soundEffects';
 
 export const HeaderNav: React.FC = () => {
@@ -17,6 +18,7 @@ export const HeaderNav: React.FC = () => {
   } = usePageant();
 
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
+  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const isJudge = currentUser.role === 'judge';
 
   // Judges ONLY see Leaderboard and Candidate Profiles / Scoring
@@ -87,6 +89,19 @@ export const HeaderNav: React.FC = () => {
 
           {/* Zone 3: Primary Action & Role Indicator */}
           <div className="flex items-center gap-2.5 shrink-0">
+            {/* Pageant Setup Button for Organizers */}
+            {!isJudge && (
+              <button
+                type="button"
+                onClick={() => setIsConfigModalOpen(true)}
+                title="Customize Pageant, Judges (1-5), and Candidates"
+                className="px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-semibold flex items-center gap-1.5 transition-all"
+              >
+                <Settings className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Pageant Setup</span>
+              </button>
+            )}
+
             {/* Audio Toggle */}
             <button
               type="button"
@@ -176,6 +191,11 @@ export const HeaderNav: React.FC = () => {
           else if (selected.role === 'auditor') setActiveView('audit_trail');
           else if (selected.role === 'emcee') setActiveView('emcee_stage');
         }}
+      />
+
+      <PageantConfigModal
+        isOpen={isConfigModalOpen}
+        onClose={() => setIsConfigModalOpen(false)}
       />
     </>
   );

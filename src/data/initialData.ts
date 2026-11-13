@@ -16,6 +16,7 @@ export const initialConfig: EventConfig = {
   rankingSystem: 'weighted_average',
   allowSelfUnlocking: false,
   auditorCertified: false,
+  judgeCount: 5,
 };
 
 export const initialUsers: User[] = [
